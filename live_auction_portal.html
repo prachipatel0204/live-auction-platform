@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveAuction - Real-Time Bidding Portal | Data Alcott Systems</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            500: '#f43f5e',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Floating Emoji Animations */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            50% { transform: translateY(-80px) scale(1.2); opacity: 0.9; }
+            100% { transform: translateY(-160px) scale(1); opacity: 0; }
+        }
+        .floating-emoji {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 1.8s ease-out forwards;
+            z-index: 50;
+            font-size: 1.75rem;
+        }
+
+        /* Pulse Ring for Live Auctions */
+        @keyframes pulseRing {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        .live-pulse {
+            animation: pulseRing 2s infinite;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full text-gray-900 dark:text-gray-100 dark:bg-gray-950 transition-colors duration-200">
+
+    <!-- App Container -->
+    <div class="min-h-screen flex flex-col md:flex-row">
+        
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between">
+            <div>
+                <!-- Brand Header -->
+                <div class="h-16 flex items-center justify-between px-6 border-b border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-brand-600/30">
+                            <i class="fa-solid fa-gavel"></i>
+                        </div>
+                        <div>
+                            <span class="font-extrabold text-lg text-gray-900 dark:text-white tracking-tight">Live<span class="text-brand-600">Auction</span></span>
+                            <span class="block text-[10px] text-gray-400 font-semibold uppercase tracking-wider">DAS Portal v4.0</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Live Ticker Banner -->
+                <div class="mx-4 my-3 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/50 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="relative flex h-2.5 w-2.5">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-600"></span>
+                        </span>
+                        <span class="text-xs font-semibold text-brand-700 dark:text-brand-300">Live Bidding Engine</span>
+                    </div>
+                    <span id="sidebarLiveCount" class="text-xs font-bold bg-brand-600 text-white px-2 py-0.5 rounded-full">3 Live</span>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="px-3 py-2 space-y-1">
+                    <a href="#dashboard" onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#live-room" onclick="navigateTo('live-room')" id="nav-live-room" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-tower-broadcast w-5 text-center"></i>
+                        <span>Live Auction Room</span>
+                        <span class="ml-auto text-[10px] font-bold uppercase bg-red-500 text-white px-1.5 py-0.5 rounded animate-pulse">HOT</span>
+                    </a>
+                    <a href="#schedule" onclick="navigateTo('schedule')" id="nav-schedule" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-calendar-days w-5 text-center"></i>
+                        <span>Auction Schedule</span>
+                    </a>
+                    <a href="#registration" onclick="navigateTo('registration')" id="nav-registration" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-user-plus w-5 text-center"></i>
+                        <span>Bidder Registration</span>
+                    </a>
+                    <a href="#my-bids" onclick="navigateTo('my-bids')" id="nav-my-bids" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-receipt w-5 text-center"></i>
+                        <span>My Bids & Wins</span>
+                        <span id="navMyBidsBadge" class="ml-auto text-xs font-bold bg-gray-200 dark:bg-gray-800 px-2 py-0.5 rounded-full">0</span>
+                    </a>
+                    <a href="#chat" onclick="navigateTo('chat')" id="nav-chat" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-comments w-5 text-center"></i>
+                        <span>Live Chat Feed</span>
+                    </a>
+                    <a href="#admin" onclick="navigateTo('admin')" id="nav-admin" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-sliders w-5 text-center"></i>
+                        <span>Admin Panel</span>
+                    </a>
+                    <a href="#reports" onclick="navigateTo('reports')" id="nav-reports" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-150">
+                        <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i>
+                        <span>Reports & Analytics</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <p class="font-semibold text-gray-700 dark:text-gray-300">Data Alcott Systems</p>
+                    <p class="text-[11px]">Task ID: <span class="font-mono font-bold text-brand-600">WD-AUC-004</span></p>
+                </div>
+                <button onclick="resetDataToDefault()" class="w-full text-left text-xs font-medium text-gray-500 hover:text-brand-600 dark:hover:text-brand-400 flex items-center space-x-2 transition-colors">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Reset Demo State</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Section -->
+        <div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+            
+            <!-- Top Navigation Bar -->
+            <header class="sticky top-0 z-20 h-16 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 md:px-8 flex items-center justify-between">
+                <!-- Left Mobile Menu Trigger -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleMobileSidebar()" class="md:hidden text-gray-600 dark:text-gray-300 hover:text-gray-900 p-2 rounded-lg">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <!-- Current View Title Header -->
+                    <h1 id="viewTitleHeader" class="text-lg font-bold text-gray-900 dark:text-white capitalize flex items-center space-x-2">
+                        <span>Dashboard</span>
+                    </h1>
+                </div>
+
+                <!-- Right Header Tools -->
+                <div class="flex items-center space-x-3">
+                    <!-- Quick Wallet / Balance -->
+                    <div class="hidden sm:flex items-center space-x-2 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full text-xs font-semibold">
+                        <i class="fa-solid fa-wallet text-brand-600"></i>
+                        <span class="text-gray-500 dark:text-gray-400">Budget:</span>
+                        <span id="userBalanceDisplay" class="text-gray-900 dark:text-white font-bold">$75,000</span>
+                    </div>
+
+                    <!-- Simulation Control Toggle -->
+                    <button onclick="toggleSimulation()" id="simToggleBtn" title="Toggle Auto-Bidding Simulation" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="simToggleText">Sim: Active</span>
+                    </button>
+
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle Dark/Light Mode">
+                        <i id="themeIcon" class="fa-solid fa-moon"></i>
+                    </button>
+
+                    <!-- Notifications Button & Dropdown -->
+                    <div class="relative">
+                        <button onclick="toggleNotificationDropdown()" class="relative p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <i class="fa-solid fa-bell"></i>
+                            <span id="notifBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-brand-600 rounded-full ring-2 ring-white dark:ring-gray-900"></span>
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-3 z-50">
+                            <div class="px-4 pb-2 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                                <h3 class="font-bold text-sm">Live Alerts & Activity</h3>
+                                <button onclick="clearNotifications()" class="text-xs text-brand-600 hover:underline font-medium">Clear All</button>
+                            </div>
+                            <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 text-xs">
+                                <!-- Dynamic notifications -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Profile Avatar -->
+                    <div class="flex items-center space-x-2 pl-2 border-l border-gray-200 dark:border-gray-800">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-rose-400 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                            AJ
+                        </div>
+                        <span class="hidden lg:inline-block text-xs font-semibold text-gray-700 dark:text-gray-300">Alex Johnson</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Dynamic View Container -->
+            <main class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+                
+                <!-- Toast Notification Container -->
+                <div id="toastContainer" class="fixed top-20 right-4 z-50 space-y-3 pointer-events-none max-w-sm w-full"></div>
+
+                <!-- VIEW 1: DASHBOARD -->
+                <section id="view-dashboard" class="view-panel space-y-8">
+                    <!-- Hero Banner -->
+                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-gray-900 via-gray-800 to-brand-950 text-white p-6 md:p-8 shadow-xl">
+                        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-brand-600/20 rounded-full blur-3xl"></div>
+                        <div class="relative z-10 max-w-2xl">
+                            <span class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-600/30 text-brand-300 text-xs font-semibold border border-brand-500/30 mb-4">
+                                <i class="fa-solid fa-gavel"></i>
+                                <span>Real-Time Auction Network</span>
+                            </span>
+                            <h2 class="text-2xl md:text-4xl font-black tracking-tight mb-3">
+                                Experience High-Stakes <span class="text-brand-500">Live Bidding</span>
+                            </h2>
+                            <p class="text-gray-300 text-sm md:text-base leading-relaxed mb-6">
+                                Join active auctions, track real-time counter-bids, and secure rare luxury items, fine art, and rare collectibles before the clock hits zero.
+                            </p>
+                            <div class="flex flex-wrap gap-3">
+                                <button onclick="navigateTo('live-room')" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-lg shadow-brand-600/40 transition-all flex items-center space-x-2">
+                                    <i class="fa-solid fa-play text-xs"></i>
+                                    <span>Enter Live Room</span>
+                                </button>
+                                <button onclick="navigateTo('schedule')" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm backdrop-blur border border-white/20 transition-all">
+                                    Browse All Catalog
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                        <div class="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider">Active Auctions</span>
+                                <div class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/50 text-brand-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </div>
+                            </div>
+                            <div id="statActiveAuctions" class="text-2xl md:text-3xl font-extrabold">0</div>
+                            <span class="text-xs text-emerald-600 font-semibold flex items-center mt-1">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> Live updating
+                            </span>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider">Total Bids Placed</span>
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                            </div>
+                            <div id="statTotalBids" class="text-2xl md:text-3xl font-extrabold">0</div>
+                            <span class="text-xs text-gray-400 font-medium mt-1 inline-block">Across all items</span>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider">Online Bidders</span>
+                                <div class="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                            </div>
+                            <div id="statOnlineBidders" class="text-2xl md:text-3xl font-extrabold">42</div>
+                            <span class="text-xs text-emerald-600 font-semibold flex items-center mt-1">
+                                <i class="fa-solid fa-circle text-[8px] mr-1.5 animate-pulse"></i> Connected live
+                            </span>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm">
+                            <div class="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider">Auction Volume</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-dollar-sign"></i>
+                                </div>
+                            </div>
+                            <div id="statTotalVolume" class="text-2xl md:text-3xl font-extrabold">$0</div>
+                            <span class="text-xs text-emerald-600 font-semibold flex items-center mt-1">
+                                <i class="fa-solid fa-shield-halved mr-1"></i> Verified Bids
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Active Auctions Grid Header -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold">Featured Live Auctions</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Place bids directly or jump into the interactive room</p>
+                        </div>
+                        <button onclick="navigateTo('schedule')" class="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline">
+                            View All <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+
+                    <!-- Active Auctions Cards Container -->
+                    <div id="dashAuctionGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Dynamic auction cards injected via JS -->
+                    </div>
+
+                    <!-- Recent Live Bids Feed Ticker -->
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-brand-600 animate-ping"></span>
+                                <h3 class="font-bold text-sm uppercase tracking-wider text-gray-700 dark:text-gray-300">Live Activity Feed</h3>
+                            </div>
+                            <span class="text-xs text-gray-400">Real-time socket simulation</span>
+                        </div>
+                        <div id="dashBidFeed" class="space-y-3 max-h-64 overflow-y-auto">
+                            <!-- Dynamic ticker items -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: LIVE AUCTION ROOM -->
+                <section id="view-live-room" class="view-panel hidden space-y-6">
+                    <!-- Auction Switcher Tabs -->
+                    <div class="flex items-center space-x-2 overflow-x-auto pb-2 border-b border-gray-200 dark:border-gray-800" id="liveRoomTabs">
+                        <!-- Dynamic Tabs -->
+                    </div>
+
+                    <!-- Main Spotlight Arena -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Left & Center: Media & Bidding Console (8 cols) -->
+                        <div class="lg:col-span-8 space-y-6">
+                            
+                            <!-- Spotlight Item Card -->
+                            <div class="relative bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-xl">
+                                <!-- Live Floating Reactions Canvas Overlay -->
+                                <div id="emojiCanvas" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                                    <!-- Image Viewport -->
+                                    <div class="relative group rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square flex items-center justify-center">
+                                        <img id="roomItemImage" src="" alt="Auction Item" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/dc2626/ffffff?text=Auction+Item'">
+                                        <div class="absolute top-3 left-3 bg-red-600 text-white text-xs font-black uppercase px-3 py-1 rounded-full shadow-lg flex items-center space-x-1.5 live-pulse">
+                                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                                            <span>LIVE NOW</span>
+                                        </div>
+                                        <div class="absolute bottom-3 right-3 bg-black/70 backdrop-blur text-white text-xs px-2.5 py-1 rounded-lg">
+                                            <i class="fa-solid fa-eye mr-1 text-brand-400"></i>
+                                            <span id="roomWatchers">18 Spectators</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Item Meta & Live Dynamic Clock -->
+                                    <div class="flex flex-col justify-between space-y-4">
+                                        <div>
+                                            <span id="roomItemCategory" class="text-xs font-extrabold text-brand-600 dark:text-brand-400 uppercase tracking-widest">Category</span>
+                                            <h2 id="roomItemTitle" class="text-2xl font-black text-gray-900 dark:text-white mt-1 leading-tight">Auction Title</h2>
+                                            <p id="roomItemDesc" class="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-3">Description...</p>
+                                        </div>
+
+                                        <!-- Countdown Timer Box -->
+                                        <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/80">
+                                            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1">
+                                                <span>Time Remaining</span>
+                                                <span class="text-brand-600 font-bold"><i class="fa-solid fa-clock"></i> Live Timer</span>
+                                            </div>
+                                            <div id="roomTimerDisplay" class="text-3xl font-black font-mono tracking-tight text-gray-900 dark:text-white">
+                                                00:00:00
+                                            </div>
+                                            <div class="w-full bg-gray-200 dark:bg-gray-800 h-2 rounded-full mt-3 overflow-hidden">
+                                                <div id="roomProgressBar" class="bg-gradient-to-r from-brand-500 to-red-600 h-full w-full transition-all duration-1000"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Current Price Showcase -->
+                                        <div class="p-4 rounded-2xl bg-brand-50 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/60">
+                                            <div class="text-xs text-brand-700 dark:text-brand-300 font-bold uppercase tracking-wider">Highest Current Bid</div>
+                                            <div class="flex items-baseline space-x-2 mt-1">
+                                                <span id="roomCurrentBid" class="text-3xl md:text-4xl font-black text-brand-600 dark:text-brand-400">$0</span>
+                                                <span class="text-xs font-semibold text-gray-500">USD</span>
+                                            </div>
+                                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1 flex items-center space-x-1">
+                                                <span>Highest Bidder:</span>
+                                                <span id="roomWinningBidder" class="font-bold text-gray-900 dark:text-white">No bids yet</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Audience Reaction Buttons Footer -->
+                                <div class="px-6 py-3 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-gray-500 dark:text-gray-400">Audience Reactions:</span>
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="triggerReaction('🔥')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:scale-110 active:scale-95 text-base transition-all shadow-sm">🔥</button>
+                                        <button onclick="triggerReaction('👏')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:scale-110 active:scale-95 text-base transition-all shadow-sm">👏</button>
+                                        <button onclick="triggerReaction('💎')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:scale-110 active:scale-95 text-base transition-all shadow-sm">💎</button>
+                                        <button onclick="triggerReaction('🎉')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:scale-110 active:scale-95 text-base transition-all shadow-sm">🎉</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bidding Action Console Card -->
+                            <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-xl">
+                                <h3 class="text-base font-bold mb-3 flex items-center space-x-2">
+                                    <i class="fa-solid fa-gavel text-brand-600"></i>
+                                    <span>Place Your Bid</span>
+                                </h3>
+
+                                <!-- Quick Increment Buttons -->
+                                <div class="grid grid-cols-4 gap-2 mb-4">
+                                    <button onclick="quickBidAdd(50)" class="py-2 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 font-bold text-xs transition-all border border-gray-200 dark:border-gray-700">+$50</button>
+                                    <button onclick="quickBidAdd(100)" class="py-2 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 font-bold text-xs transition-all border border-gray-200 dark:border-gray-700">+$100</button>
+                                    <button onclick="quickBidAdd(500)" class="py-2 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 font-bold text-xs transition-all border border-gray-200 dark:border-gray-700">+$500</button>
+                                    <button onclick="quickBidAdd(1000)" class="py-2 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 font-bold text-xs transition-all border border-gray-200 dark:border-gray-700">+$1,000</button>
+                                </div>
+
+                                <!-- Custom Bid Input & Submit -->
+                                <form onsubmit="handleCustomBidSubmit(event)" class="flex flex-col sm:flex-row gap-3">
+                                    <div class="relative flex-1">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 font-bold">$</div>
+                                        <input type="number" id="customBidInput" placeholder="Enter bid amount" class="w-full pl-8 pr-4 py-3 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                    </div>
+                                    <button type="submit" class="py-3 px-8 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-extrabold text-base shadow-lg shadow-brand-600/30 transition-all flex items-center justify-center space-x-2">
+                                        <i class="fa-solid fa-bolt"></i>
+                                        <span>CONFIRM BID</span>
+                                    </button>
+                                </form>
+                                <p id="bidValidationMsg" class="text-xs text-gray-400 mt-2">Minimum bid required: <span id="minBidReqText" class="font-bold text-gray-700 dark:text-gray-300">$0</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Right Sidebar: Live Bid Stream & Chat (4 cols) -->
+                        <div class="lg:col-span-4 space-y-6">
+                            
+                            <!-- Bid Log Timeline -->
+                            <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-5 shadow-xl flex flex-col h-[340px]">
+                                <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 class="font-bold text-sm flex items-center space-x-2">
+                                        <i class="fa-solid fa-list-ol text-brand-600"></i>
+                                        <span>Bid History</span>
+                                    </h3>
+                                    <span id="roomBidCountBadge" class="text-xs bg-brand-50 dark:bg-brand-950 text-brand-600 font-bold px-2 py-0.5 rounded-full">0 Bids</span>
+                                </div>
+                                <div id="roomBidHistory" class="flex-1 overflow-y-auto py-3 space-y-2 text-xs">
+                                    <!-- Dynamic bid history -->
+                                </div>
+                            </div>
+
+                            <!-- Live Chat Stream Box -->
+                            <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-5 shadow-xl flex flex-col h-[340px]">
+                                <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                                    <h3 class="font-bold text-sm flex items-center space-x-2">
+                                        <i class="fa-solid fa-comments text-emerald-500"></i>
+                                        <span>Room Chat</span>
+                                    </h3>
+                                    <span class="text-[10px] text-emerald-600 font-bold flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> Live</span>
+                                </div>
+                                <div id="roomChatStream" class="flex-1 overflow-y-auto py-3 space-y-2 text-xs">
+                                    <!-- Dynamic chat messages -->
+                                </div>
+                                <form onsubmit="handleRoomChatSubmit(event)" class="mt-2 flex space-x-2">
+                                    <input type="text" id="roomChatInput" placeholder="Type message..." class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-brand-600">
+                                    <button type="submit" class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-colors">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 3: AUCTION SCHEDULE -->
+                <section id="view-schedule" class="view-panel hidden space-y-6">
+                    <!-- Filters & Search Toolbar -->
+                    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <!-- Search Box -->
+                        <div class="relative w-full md:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                            <input type="text" id="scheduleSearchInput" oninput="filterSchedule()" placeholder="Search items or categories..." class="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        </div>
+
+                        <!-- Category Filters -->
+                        <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto text-xs">
+                            <button onclick="setScheduleStatusFilter('all')" id="filter-status-all" class="sched-filter-btn px-3 py-1.5 rounded-xl font-bold bg-brand-600 text-white">All</button>
+                            <button onclick="setScheduleStatusFilter('active')" id="filter-status-active" class="sched-filter-btn px-3 py-1.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">🔴 Live Now</button>
+                            <button onclick="setScheduleStatusFilter('upcoming')" id="filter-status-upcoming" class="sched-filter-btn px-3 py-1.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">⏳ Upcoming</button>
+                            <button onclick="setScheduleStatusFilter('ended')" id="filter-status-ended" class="sched-filter-btn px-3 py-1.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">🏁 Ended</button>
+                        </div>
+                    </div>
+
+                    <!-- Catalog Cards Grid -->
+                    <div id="scheduleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Dynamic schedule items -->
+                    </div>
+                </section>
+
+                <!-- VIEW 4: BIDDER REGISTRATION -->
+                <section id="view-registration" class="view-panel hidden max-w-3xl mx-auto space-y-8">
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 md:p-10 shadow-xl">
+                        <div class="text-center max-w-lg mx-auto mb-8">
+                            <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-950 text-brand-600 mx-auto flex items-center justify-center text-xl mb-3">
+                                <i class="fa-solid fa-id-card"></i>
+                            </div>
+                            <h2 class="text-2xl font-black">Bidder Verification & Registration</h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Register to obtain live bidding credentials for high-tier auctions.</p>
+                        </div>
+
+                        <form onsubmit="handleBidderRegistration(event)" class="space-y-5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Full Name *</label>
+                                    <input type="text" id="regName" required placeholder="e.g. Sarah Vance" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Email Address *</label>
+                                    <input type="email" id="regEmail" required placeholder="sarah@example.com" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Phone Number *</label>
+                                    <input type="tel" id="regPhone" required placeholder="+1 (555) 234-5678" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Starting Budget Cap ($) *</label>
+                                    <input type="number" id="regBudget" required min="1000" value="50000" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Primary Interest Category</label>
+                                <select id="regCategory" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                    <option value="Luxury Watches">Luxury Watches & Timepieces</option>
+                                    <option value="Fine Art">Fine Art & Sculptures</option>
+                                    <option value="Vehicles">Exotic Vehicles & Classic Cars</option>
+                                    <option value="Jewelry">High Jewelry & Diamonds</option>
+                                    <option value="Collectibles">Rare Collectibles & Cards</option>
+                                </select>
+                            </div>
+
+                            <div class="p-4 bg-brand-50 dark:bg-brand-950/40 rounded-2xl border border-brand-100 dark:border-brand-900/40 flex items-start space-x-3">
+                                <input type="checkbox" id="regTerms" required class="mt-1 rounded text-brand-600 focus:ring-brand-600">
+                                <label for="regTerms" class="text-xs text-gray-600 dark:text-gray-400">
+                                    I agree to the <span class="font-bold text-gray-900 dark:text-white">Data Alcott Systems Live Bidding Guidelines</span> and acknowledge that all submitted bids are binding.
+                                </label>
+                            </div>
+
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-base shadow-lg shadow-brand-600/30 transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-user-check"></i>
+                                <span>Complete Registration</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Registered Bidders Preview Directory -->
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+                        <h3 class="font-bold text-sm mb-4">Verified Community Bidders</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-400 font-bold uppercase">
+                                        <th class="py-2.5 px-3">Bidder Name</th>
+                                        <th class="py-2.5 px-3">Category</th>
+                                        <th class="py-2.5 px-3">Approved Budget</th>
+                                        <th class="py-2.5 px-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="biddersTableBody" class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    <!-- Dynamic registered bidders -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 5: BIDDER DASHBOARD (MY BIDS) -->
+                <section id="view-my-bids" class="view-panel hidden space-y-6">
+                    <!-- Profile Summary Card -->
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-rose-400 text-white flex items-center justify-center text-2xl font-black shadow-lg">
+                                AJ
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold">Alex Johnson</h2>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Verified VIP Bidder • Member since 2026</p>
+                                <div class="flex items-center space-x-2 mt-2">
+                                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">Verified Account</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[10px]">Level 3 Access</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6 text-center">
+                            <div>
+                                <span class="text-xs text-gray-400 font-medium">Bids Placed</span>
+                                <div id="myTotalBidsCount" class="text-xl font-black text-gray-900 dark:text-white">0</div>
+                            </div>
+                            <div class="border-l border-gray-100 dark:border-gray-800 pl-6">
+                                <span class="text-xs text-gray-400 font-medium">Auctions Won</span>
+                                <div id="myWonCount" class="text-xl font-black text-emerald-600">0</div>
+                            </div>
+                            <div class="border-l border-gray-100 dark:border-gray-800 pl-6">
+                                <span class="text-xs text-gray-400 font-medium">Available Wallet</span>
+                                <div id="myWalletDisplay" class="text-xl font-black text-brand-600">$75,000</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs & Filters for Bids -->
+                    <div class="flex border-b border-gray-200 dark:border-gray-800 space-x-6">
+                        <button onclick="setMyBidsTab('active')" id="myBidsTab-active" class="pb-3 text-xs font-bold border-b-2 border-brand-600 text-brand-600">Active Bids</button>
+                        <button onclick="setMyBidsTab('won')" id="myBidsTab-won" class="pb-3 text-xs font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-700">Won Items</button>
+                        <button onclick="setMyBidsTab('outbid')" id="myBidsTab-outbid" class="pb-3 text-xs font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-700">Outbid Alerts</button>
+                    </div>
+
+                    <!-- My Bids Items Container -->
+                    <div id="myBidsContainer" class="space-y-4">
+                        <!-- Dynamic User Bids Cards -->
+                    </div>
+                </section>
+
+                <!-- VIEW 6: LIVE CHAT ROOM -->
+                <section id="view-chat" class="view-panel hidden space-y-6">
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-xl grid grid-cols-1 lg:grid-cols-4 h-[650px]">
+                        <!-- Chat Channel List (1 col) -->
+                        <div class="border-r border-gray-100 dark:border-gray-800 p-4 space-y-3 bg-gray-50/50 dark:bg-gray-950/50">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-gray-400">Auction Rooms</h3>
+                            <div class="space-y-1" id="chatRoomChannels">
+                                <!-- Dynamic Channels -->
+                            </div>
+                        </div>
+
+                        <!-- Chat Conversation View (3 cols) -->
+                        <div class="lg:col-span-3 flex flex-col h-full">
+                            <div class="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <h3 id="activeChatChannelTitle" class="font-bold text-sm">Global Auction Lounge</h3>
+                                </div>
+                                <span class="text-xs text-gray-400"><i class="fa-solid fa-users mr-1"></i> 24 Online</span>
+                            </div>
+
+                            <div id="mainChatFeed" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+                                <!-- Dynamic Chat Feed -->
+                            </div>
+
+                            <form onsubmit="handleMainChatSubmit(event)" class="p-4 border-t border-gray-100 dark:border-gray-800 flex space-x-3">
+                                <input type="text" id="mainChatInput" placeholder="Send message to live bidders..." class="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-600">
+                                <button type="submit" class="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl text-xs shadow-md shadow-brand-600/30 transition-all flex items-center space-x-2">
+                                    <span>Send</span>
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 7: ADMIN PANEL -->
+                <section id="view-admin" class="view-panel hidden space-y-8">
+                    <!-- Admin Header Toolbar -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div>
+                            <h2 class="text-xl font-bold flex items-center space-x-2">
+                                <i class="fa-solid fa-user-gear text-brand-600"></i>
+                                <span>Live Auction Control Center</span>
+                            </h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage listings, adjust timers, override bids, and announce winners</p>
+                        </div>
+                        <button onclick="openCreateAuctionModal()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-lg shadow-brand-600/30 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Create New Auction Listing</span>
+                        </button>
+                    </div>
+
+                    <!-- Manage Auctions Table -->
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+                        <h3 class="font-bold text-sm mb-4">Active & Scheduled Listings</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800 text-gray-400 font-bold uppercase">
+                                        <th class="py-3 px-3">Item Info</th>
+                                        <th class="py-3 px-3">Current Bid</th>
+                                        <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3">Timer Left</th>
+                                        <th class="py-3 px-3 text-right">Admin Controls</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminAuctionTable" class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    <!-- Dynamic admin table rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 8: REPORTS & ANALYTICS -->
+                <section id="view-reports" class="view-panel hidden space-y-8">
+                    <!-- Export Action Header -->
+                    <div class="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold flex items-center space-x-2">
+                                <i class="fa-solid fa-chart-line text-emerald-500"></i>
+                                <span>Live Auction Data Reports</span>
+                            </h2>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Download real-time bid audit trails and platform analytics CSV files</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="exportBidsCSV()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all flex items-center space-x-2">
+                                <i class="fa-solid fa-file-csv"></i>
+                                <span>Export Bids CSV</span>
+                            </button>
+                            <button onclick="exportAuctionsCSV()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/30 transition-all flex items-center space-x-2">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>Export Auctions CSV</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Category Performance & Charts Preview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Category Distribution Card -->
+                        <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+                            <h3 class="font-bold text-sm mb-4">Auction Volume by Category</h3>
+                            <div class="space-y-4 text-xs" id="categoryReportBars">
+                                <!-- Dynamic category progress bars -->
+                            </div>
+                        </div>
+
+                        <!-- Leaderboard Bidders Card -->
+                        <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+                            <h3 class="font-bold text-sm mb-4">Top Platform Bidders</h3>
+                            <div class="space-y-3 text-xs" id="topBiddersLeaderboard">
+                                <!-- Dynamic top bidders -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Auction Modal -->
+    <div id="createAuctionModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="closeCreateAuctionModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-xl font-bold mb-4">New Auction Listing</h3>
+            
+            <form onsubmit="handleCreateAuction(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Item Title *</label>
+                    <input type="text" id="newTitle" required placeholder="e.g. 1967 Mustang Shelby GT500" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Category *</label>
+                        <select id="newCategory" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl">
+                            <option value="Luxury Watches">Luxury Watches</option>
+                            <option value="Fine Art">Fine Art</option>
+                            <option value="Vehicles">Vehicles</option>
+                            <option value="Jewelry">Jewelry</option>
+                            <option value="Collectibles">Collectibles</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Starting Bid ($) *</label>
+                        <input type="number" id="newStartPrice" min="10" required value="5000" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Image Unsplash URL</label>
+                    <input type="url" id="newImage" placeholder="https://images.unsplash.com/photo-..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Auction Duration (Minutes) *</label>
+                    <input type="number" id="newDuration" min="1" max="180" required value="10" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                    <textarea id="newDesc" rows="3" placeholder="Enter provenance and specs..." class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl"></textarea>
+                </div>
+
+                <div class="pt-2 flex space-x-3">
+                    <button type="button" onclick="closeCreateAuctionModal()" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 font-bold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-md shadow-brand-600/30">Launch Auction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        /* ==========================================================================
+           1. INITIAL STATE & MOCK DATA MANAGEMENT
+           ========================================================================== */
+        
+        const DEFAULT_AUCTIONS = [
+            {
+                id: 1,
+                title: "Vintage Rolex Daytona 1964",
+                category: "Luxury Watches",
+                description: "Pristine condition 1964 Rolex Daytona reference 6239 with original manual wind movement and rare exotic dial.",
+                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop",
+                startPrice: 15000,
+                currentPrice: 28500,
+                winningBidder: "John Smith",
+                endTime: 480, // seconds remaining
+                totalTime: 600,
+                status: "active",
+                bidsCount: 14,
+                participants: 12
+            },
+            {
+                id: 2,
+                title: "Banksy Original Graffiti Canvas",
+                category: "Fine Art",
+                description: "Authenticated spray stencil canvas artwork with full Certificate of Authenticity from Pest Control.",
+                image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop",
+                startPrice: 30000,
+                currentPrice: 52000,
+                winningBidder: "Elena Rostova",
+                endTime: 850,
+                totalTime: 1200,
+                status: "active",
+                bidsCount: 19,
+                participants: 18
+            },
+            {
+                id: 3,
+                title: "1967 Ford Mustang Shelby GT500",
+                category: "Vehicles",
+                description: "Fully restored Fastback with 7.0L V8 Interceptor engine, original Cobra Le Mans valve covers, and 4-speed manual transmission.",
+                image: "https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?w=800&auto=format&fit=crop",
+                startPrice: 85000,
+                currentPrice: 110000,
+                winningBidder: "Michael Chang",
+                endTime: 1800,
+                totalTime: 3600,
+                status: "active",
+                bidsCount: 26,
+                participants: 22
+            },
+            {
+                id: 4,
+                title: "18K Rose Gold Diamond Necklace",
+                category: "Jewelry",
+                description: "Exquisite 5-carat VVS clarity natural diamond pendant encrusted in handcrafted 18k rose gold chain.",
+                image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&auto=format&fit=crop",
+                startPrice: 12000,
+                currentPrice: 12000,
+                winningBidder: "No bids yet",
+                endTime: 3600,
+                totalTime: 3600,
+                status: "upcoming",
+                bidsCount: 0,
+                participants: 6
+            },
+            {
+                id: 5,
+                title: "1st Edition Holographic Charizard 1999",
+                category: "Collectibles",
+                description: "PSA 10 Gem Mint Shadowless 1st Edition Charizard card. Flawless centering and zero edge silvering.",
+                image: "https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?w=800&auto=format&fit=crop",
+                startPrice: 20000,
+                currentPrice: 44000,
+                winningBidder: "David K.",
+                endTime: 0,
+                totalTime: 1200,
+                status: "ended",
+                bidsCount: 31,
+                participants: 29
+            }
+        ];
+
+        const DEFAULT_BIDS = [
+            { id: 101, auctionId: 1, bidderName: "John Smith", amount: 28500, timestamp: "2 mins ago", status: "winning" },
+            { id: 102, auctionId: 1, bidderName: "Sarah M.", amount: 27000, timestamp: "5 mins ago", status: "outbid" },
+            { id: 103, auctionId: 2, bidderName: "Elena Rostova", amount: 52000, timestamp: "1 min ago", status: "winning" },
+            { id: 104, auctionId: 3, bidderName: "Michael Chang", amount: 110000, timestamp: "4 mins ago", status: "winning" }
+        ];
+
+        const DEFAULT_BIDDERS = [
+            { id: 1, name: "Alex Johnson (You)", email: "alex@example.com", phone: "+1 (555) 019-2834", budget: 75000, category: "Luxury Watches", status: "Verified" },
+            { id: 2, name: "John Smith", email: "john@smith.org", phone: "+1 (555) 482-9912", budget: 120000, category: "Luxury Watches", status: "Verified" },
+            { id: 3, name: "Elena Rostova", email: "elena@artvault.io", phone: "+44 20 7946 0912", budget: 250000, category: "Fine Art", status: "VIP Verified" },
+            { id: 4, name: "Michael Chang", email: "mchang@motors.com", phone: "+1 (555) 839-2011", budget: 300000, category: "Vehicles", status: "Verified" }
+        ];
+
+        // Global State Architecture
+        let state = {
+            auctions: JSON.parse(localStorage.getItem('das_auctions')) || DEFAULT_AUCTIONS,
+            bids: JSON.parse(localStorage.getItem('das_bids')) || DEFAULT_BIDS,
+            bidders: JSON.parse(localStorage.getItem('das_bidders')) || DEFAULT_BIDDERS,
+            chats: JSON.parse(localStorage.getItem('das_chats')) || [
+                { id: 1, auctionId: 1, username: "John Smith", message: "That Rolex looks pristine! Raising my bid.", time: "14:22" },
+                { id: 2, auctionId: 1, username: "Sarah M.", message: "Counter-bidding soon, don't celebrate yet!", time: "14:23" }
+            ],
+            notifications: [
+                { id: 1, title: "Auction Joined", msg: "You joined Vintage Rolex Daytona room.", time: "Just now", read: false }
+            ],
+            selectedAuctionId: 1,
+            userWallet: 75000,
+            simulationActive: true,
+            activeScheduleFilter: 'all',
+            activeMyBidsTab: 'active',
+            activeChatChannel: 1
+        };
+
+        // Save State Helper
+        function saveState() {
+            localStorage.setItem('das_auctions', JSON.stringify(state.auctions));
+            localStorage.setItem('das_bids', JSON.stringify(state.bids));
+            localStorage.setItem('das_bidders', JSON.stringify(state.bidders));
+            localStorage.setItem('das_chats', JSON.stringify(state.chats));
+        }
+
+        function resetDataToDefault() {
+            localStorage.clear();
+            state.auctions = DEFAULT_AUCTIONS;
+            state.bids = DEFAULT_BIDS;
+            state.bidders = DEFAULT_BIDDERS;
+            saveState();
+            showToast("Demo Data Reset Successfully!", "info");
+            renderAll();
+        }
+
+        /* ==========================================================================
+           2. AUDIO SYNTHESIZER (WEB AUDIO API)
+           ========================================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep(type = "bid") {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === "bid") {
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === "outbid") {
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === "win") {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                }
+            } catch(e) {}
+        }
+
+        /* ==========================================================================
+           3. UI NAVIGATION & THEME CONTROLS
+           ========================================================================== */
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
+            const target = document.getElementById(`view-${viewId}`);
+            if (target) target.classList.remove('hidden');
+
+            // Update Nav item active highlight
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/30');
+                item.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+            });
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+                activeNav.classList.add('bg-brand-600', 'text-white', 'shadow-md', 'shadow-brand-600/30');
+            }
+
+            // Mobile sidebar auto hide
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebarBackdrop').classList.add('hidden');
+
+            // Header Title
+            const titles = {
+                'dashboard': 'Live Overview Dashboard',
+                'live-room': 'Spotlight Bidding Arena',
+                'schedule': 'Catalog & Live Schedule',
+                'registration': 'Bidder Registration',
+                'my-bids': 'My Bids & Wins Portal',
+                'chat': 'Community Live Chat',
+                'admin': 'Admin Operations Center',
+                'reports': 'Reports & Export Analytics'
+            };
+            document.getElementById('viewTitleHeader').innerHTML = `<span class="text-brand-600">🔴</span> <span>${titles[viewId] || viewId}</span>`;
+
+            renderAll();
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+        }
+
+        function toggleSimulation() {
+            state.simulationActive = !state.simulationActive;
+            const btn = document.getElementById('simToggleBtn');
+            const text = document.getElementById('simToggleText');
+            if (state.simulationActive) {
+                btn.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center space-x-1.5";
+                text.innerText = "Sim: Active";
+            } else {
+                btn.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 flex items-center space-x-1.5";
+                text.innerText = "Sim: Paused";
+            }
+        }
+
+        function toggleNotificationDropdown() {
+            document.getElementById('notifDropdown').classList.toggle('hidden');
+        }
+
+        function showToast(msg, type = "success") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                success: "bg-emerald-600 text-white",
+                warning: "bg-amber-500 text-white",
+                danger: "bg-red-600 text-white",
+                info: "bg-blue-600 text-white"
+            };
+            const icons = {
+                success: "fa-circle-check",
+                warning: "fa-triangle-exclamation",
+                danger: "fa-circle-xmark",
+                info: "fa-circle-info"
+            };
+
+            toast.className = `p-4 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-3 pointer-events-auto transition-all transform translate-x-10 duration-300 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info} text-lg"></i>
+                <div class="text-xs font-bold leading-tight flex-1">${msg}</div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-x-10'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-10');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        /* ==========================================================================
+           4. RENDERERS & CORE LOGIC
+           ========================================================================== */
+        
+        function renderAll() {
+            renderHeaderAndStats();
+            renderDashboard();
+            renderLiveRoom();
+            renderSchedule();
+            renderBiddersTable();
+            renderMyBids();
+            renderChatFeed();
+            renderAdminPanel();
+            renderReports();
+        }
+
+        function renderHeaderAndStats() {
+            const activeCount = state.auctions.filter(a => a.status === 'active').length;
+            document.getElementById('sidebarLiveCount').innerText = `${activeCount} Live`;
+            document.getElementById('statActiveAuctions').innerText = activeCount;
+            document.getElementById('statTotalBids').innerText = state.bids.length;
+            
+            const totalVol = state.auctions.reduce((sum, a) => sum + a.currentPrice, 0);
+            document.getElementById('statTotalVolume').innerText = `$${totalVol.toLocaleString()}`;
+            document.getElementById('userBalanceDisplay').innerText = `$${state.userWallet.toLocaleString()}`;
+            document.getElementById('myWalletDisplay').innerText = `$${state.userWallet.toLocaleString()}`;
+
+            // Notifications
+            const notifList = document.getElementById('notifList');
+            notifList.innerHTML = state.notifications.map(n => `
+                <div class="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-start space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-600 mt-1.5 flex-shrink-0"></span>
+                    <div>
+                        <div class="font-bold text-gray-800 dark:text-gray-200">${n.title}</div>
+                        <div class="text-gray-500">${n.msg}</div>
+                        <span class="text-[10px] text-gray-400 mt-0.5 inline-block">${n.time}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const myBidsCount = state.bids.filter(b => b.bidderName === "Alex Johnson (You)").length;
+            document.getElementById('navMyBidsBadge').innerText = myBidsCount;
+        }
+
+        function renderDashboard() {
+            const grid = document.getElementById('dashAuctionGrid');
+            const activeList = state.auctions.filter(a => a.status === 'active');
+            
+            grid.innerHTML = activeList.map(a => `
+                <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-lg hover:shadow-xl transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="relative h-48 bg-gray-100 dark:bg-gray-800">
+                            <img src="${a.image}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/dc2626/ffffff?text=Auction+Item'">
+                            <div class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow live-pulse flex items-center space-x-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                <span>LIVE</span>
+                            </div>
+                            <div class="absolute bottom-3 right-3 bg-black/70 backdrop-blur text-white text-xs font-mono font-bold px-2 py-0.5 rounded-md">
+                                <i class="fa-solid fa-stopwatch text-brand-400 mr-1"></i>${formatTimer(a.endTime)}
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <span class="text-[10px] font-bold text-brand-600 uppercase tracking-widest">${a.category}</span>
+                            <h4 class="font-extrabold text-base line-clamp-1 mt-0.5 text-gray-900 dark:text-white">${a.title}</h4>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 uppercase font-semibold">Current Bid</span>
+                                    <div class="text-xl font-black text-brand-600 dark:text-brand-400">$${a.currentPrice.toLocaleString()}</div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] text-gray-400 font-semibold">Top Bidder</span>
+                                    <div class="text-xs font-bold text-gray-700 dark:text-gray-300">${a.winningBidder}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button onclick="selectAndGoToLiveRoom(${a.id})" class="w-full py-2.5 rounded-xl bg-gray-900 dark:bg-gray-800 hover:bg-brand-600 text-white font-bold text-xs transition-colors flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-gavel"></i>
+                            <span>Bid In Live Room</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Ticker feed
+            const feed = document.getElementById('dashBidFeed');
+            feed.innerHTML = state.bids.slice(0, 5).map(b => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800/50">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-xs">
+                            ${b.bidderName.charAt(0)}
+                        </div>
+                        <div>
+                            <span class="font-bold text-xs text-gray-900 dark:text-white">${b.bidderName}</span>
+                            <span class="text-[11px] text-gray-400 ml-1">placed a bid of</span>
+                            <span class="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 ml-1">$${b.amount.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-medium text-gray-400">${b.timestamp}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderLiveRoom() {
+            const tabs = document.getElementById('liveRoomTabs');
+            const activeList = state.auctions.filter(a => a.status === 'active');
+            
+            if (activeList.length === 0) {
+                tabs.innerHTML = '<span class="text-xs text-gray-400 p-2">No active live auctions right now. Check schedule.</span>';
+            } else {
+                tabs.innerHTML = activeList.map(a => `
+                    <button onclick="setSpotlightAuction(${a.id})" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${a.id === state.selectedAuctionId ? 'bg-brand-600 text-white shadow-md' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-800'}">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>${a.title}</span>
+                    </button>
+                `).join('');
+            }
+
+            const current = state.auctions.find(a => a.id === state.selectedAuctionId) || activeList[0];
+            if (!current) return;
+
+            document.getElementById('roomItemImage').src = current.image;
+            document.getElementById('roomItemCategory').innerText = current.category;
+            document.getElementById('roomItemTitle').innerText = current.title;
+            document.getElementById('roomItemDesc').innerText = current.description;
+            document.getElementById('roomCurrentBid').innerText = `$${current.currentPrice.toLocaleString()}`;
+            document.getElementById('roomWinningBidder').innerText = current.winningBidder;
+            document.getElementById('roomTimerDisplay').innerText = formatTimer(current.endTime);
+            document.getElementById('minBidReqText').innerText = `$${(current.currentPrice + 50).toLocaleString()}`;
+
+            // Progress bar calculation
+            const pct = Math.max(0, Math.min(100, (current.endTime / (current.totalTime || 600)) * 100));
+            document.getElementById('roomProgressBar').style.width = `${pct}%`;
+
+            // Bids history for this item
+            const itemBids = state.bids.filter(b => b.auctionId === current.id);
+            document.getElementById('roomBidCountBadge').innerText = `${itemBids.length} Bids`;
+            document.getElementById('roomBidHistory').innerHTML = itemBids.map(b => `
+                <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-950">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-gray-800 dark:text-gray-200">${b.bidderName}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${b.status === 'winning' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}">${b.status}</span>
+                    </div>
+                    <span class="font-mono font-bold text-brand-600">$${b.amount.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            // Chat history for this room
+            const roomChats = state.chats.filter(c => c.auctionId === current.id);
+            document.getElementById('roomChatStream').innerHTML = roomChats.map(c => `
+                <div class="p-2 rounded-lg bg-gray-50 dark:bg-gray-950">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-brand-600 dark:text-brand-400">${c.username}</span>
+                        <span class="text-[9px] text-gray-400">${c.time}</span>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mt-0.5">${c.message}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectAndGoToLiveRoom(auctionId) {
+            state.selectedAuctionId = auctionId;
+            navigateTo('live-room');
+        }
+
+        function setSpotlightAuction(auctionId) {
+            state.selectedAuctionId = auctionId;
+            renderLiveRoom();
+        }
+
+        function quickBidAdd(amount) {
+            const current = state.auctions.find(a => a.id === state.selectedAuctionId);
+            if (!current) return;
+            const newAmount = current.currentPrice + amount;
+            document.getElementById('customBidInput').value = newAmount;
+        }
+
+        function handleCustomBidSubmit(e) {
+            e.preventDefault();
+            const current = state.auctions.find(a => a.id === state.selectedAuctionId);
+            if (!current) return;
+
+            const input = document.getElementById('customBidInput');
+            const val = parseInt(input.value);
+
+            if (isNaN(val) || val <= current.currentPrice) {
+                showToast(`Bid must be strictly higher than current price ($${current.currentPrice.toLocaleString()})`, "warning");
+                return;
+            }
+
+            if (val > state.userWallet) {
+                showToast("Insufficient wallet budget cap available!", "danger");
+                return;
+            }
+
+            // Place Bid
+            placeBid(current.id, "Alex Johnson (You)", val);
+            input.value = '';
+        }
+
+        function placeBid(auctionId, bidderName, amount) {
+            const auction = state.auctions.find(a => a.id === auctionId);
+            if (!auction) return;
+
+            auction.currentPrice = amount;
+            auction.winningBidder = bidderName;
+            auction.bidsCount += 1;
+
+            // Mark previous bids for this auction as outbid
+            state.bids.filter(b => b.auctionId === auctionId).forEach(b => b.status = 'outbid');
+
+            // Add new winning bid
+            state.bids.unshift({
+                id: Date.now(),
+                auctionId: auctionId,
+                bidderName: bidderName,
+                amount: amount,
+                timestamp: "Just now",
+                status: "winning"
+            });
+
+            // Notification
+            if (bidderName === "Alex Johnson (You)") {
+                playBeep("bid");
+                showToast(`You successfully placed a bid of $${amount.toLocaleString()}!`, "success");
+            } else {
+                if (state.bids.some(b => b.auctionId === auctionId && b.bidderName === "Alex Johnson (You)")) {
+                    playBeep("outbid");
+                    showToast(`Alert: ${bidderName} outbid you with $${amount.toLocaleString()}!`, "warning");
+                }
+            }
+
+            saveState();
+            renderAll();
+        }
+
+        function triggerReaction(emoji) {
+            const canvas = document.getElementById('emojiCanvas');
+            const el = document.createElement('div');
+            el.className = 'floating-emoji';
+            el.innerText = emoji;
+            el.style.left = `${Math.random() * 70 + 15}%`;
+            el.style.bottom = '20px';
+            canvas.appendChild(el);
+            setTimeout(() => el.remove(), 1800);
+        }
+
+        function handleRoomChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('roomChatInput');
+            if (!input.value.trim()) return;
+
+            state.chats.push({
+                id: Date.now(),
+                auctionId: state.selectedAuctionId,
+                username: "Alex Johnson (You)",
+                message: input.value.trim(),
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            input.value = '';
+            saveState();
+            renderLiveRoom();
+        }
+
+        /* ==========================================================================
+           5. AUCTION SCHEDULE & FILTERS
+           ========================================================================== */
+        function renderSchedule() {
+            const grid = document.getElementById('scheduleGrid');
+            const query = (document.getElementById('scheduleSearchInput')?.value || '').toLowerCase();
+
+            let items = state.auctions.filter(a => {
+                const matchStatus = state.activeScheduleFilter === 'all' || a.status === state.activeScheduleFilter;
+                const matchQuery = a.title.toLowerCase().includes(query) || a.category.toLowerCase().includes(query);
+                return matchStatus && matchQuery;
+            });
+
+            grid.innerHTML = items.map(a => `
+                <div class="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="relative h-44 bg-gray-100 dark:bg-gray-800">
+                            <img src="${a.image}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/dc2626/ffffff?text=Auction+Item'">
+                            <span class="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase text-white ${a.status === 'active' ? 'bg-red-600' : a.status === 'upcoming' ? 'bg-blue-600' : 'bg-gray-600'}">
+                                ${a.status}
+                            </span>
+                        </div>
+                        <div class="p-5">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${a.category}</span>
+                            <h4 class="font-extrabold text-base line-clamp-1 mt-0.5">${a.title}</h4>
+                            <p class="text-xs text-gray-500 line-clamp-2 mt-1">${a.description}</p>
+                            <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 font-semibold">Price</span>
+                                    <div class="text-lg font-black text-brand-600">$${a.currentPrice.toLocaleString()}</div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] text-gray-400 font-semibold">Bids</span>
+                                    <div class="text-sm font-bold">${a.bidsCount}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0">
+                        ${a.status === 'active' ? `
+                            <button onclick="selectAndGoToLiveRoom(${a.id})" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs">Join Live Auction</button>
+                        ` : `
+                            <button disabled class="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 font-bold text-xs cursor-not-allowed">Auction ${a.status}</button>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setScheduleStatusFilter(status) {
+            state.activeScheduleFilter = status;
+            document.querySelectorAll('.sched-filter-btn').forEach(btn => {
+                btn.className = "sched-filter-btn px-3 py-1.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+            });
+            const activeBtn = document.getElementById(`filter-status-${status}`);
+            if (activeBtn) activeBtn.className = "sched-filter-btn px-3 py-1.5 rounded-xl font-bold bg-brand-600 text-white";
+            renderSchedule();
+        }
+
+        function filterSchedule() {
+            renderSchedule();
+        }
+
+        /* ==========================================================================
+           6. BIDDER REGISTRATION & TABLE
+           ========================================================================== */
+        function handleBidderRegistration(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const phone = document.getElementById('regPhone').value;
+            const budget = parseInt(document.getElementById('regBudget').value);
+            const category = document.getElementById('regCategory').value;
+
+            state.bidders.push({
+                id: Date.now(),
+                name, email, phone, budget, category, status: "Verified"
+            });
+
+            saveState();
+            showToast(`Bidder Account Verified for ${name}!`, "success");
+            e.target.reset();
+            renderBiddersTable();
+        }
+
+        function renderBiddersTable() {
+            const body = document.getElementById('biddersTableBody');
+            body.innerHTML = state.bidders.map(b => `
+                <tr>
+                    <td class="py-3 px-3 font-bold text-gray-900 dark:text-white">${b.name}</td>
+                    <td class="py-3 px-3 text-gray-500">${b.category}</td>
+                    <td class="py-3 px-3 font-mono font-semibold text-emerald-600">$${b.budget.toLocaleString()}</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">${b.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        /* ==========================================================================
+           7. MY BIDS & WINS
+           ========================================================================== */
+        function setMyBidsTab(tab) {
+            state.activeMyBidsTab = tab;
+            ['active', 'won', 'outbid'].forEach(t => {
+                const el = document.getElementById(`myBidsTab-${t}`);
+                if (t === tab) {
+                    el.className = "pb-3 text-xs font-bold border-b-2 border-brand-600 text-brand-600";
+                } else {
+                    el.className = "pb-3 text-xs font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-700";
+                }
+            });
+            renderMyBids();
+        }
+
+        function renderMyBids() {
+            const container = document.getElementById('myBidsContainer');
+            const myBids = state.bids.filter(b => b.bidderName === "Alex Johnson (You)");
+            
+            document.getElementById('myTotalBidsCount').innerText = myBids.length;
+            const wonList = myBids.filter(b => b.status === 'completed' || (state.auctions.find(a => a.id === b.auctionId)?.status === 'ended' && b.status === 'winning'));
+            document.getElementById('myWonCount').innerText = wonList.length;
+
+            let filtered = myBids;
+            if (state.activeMyBidsTab === 'active') {
+                filtered = myBids.filter(b => state.auctions.find(a => a.id === b.auctionId)?.status === 'active');
+            } else if (state.activeMyBidsTab === 'won') {
+                filtered = wonList;
+            } else if (state.activeMyBidsTab === 'outbid') {
+                filtered = myBids.filter(b => b.status === 'outbid');
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-xs text-gray-400 bg-white dark:bg-gray-900 rounded-3xl">No bid records found for this view.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(b => {
+                const item = state.auctions.find(a => a.id === b.auctionId);
+                return `
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <img src="${item ? item.image : ''}" class="w-12 h-12 rounded-xl object-cover" onerror="this.src='https://placehold.co/100x100/dc2626/ffffff?text=Item'">
+                            <div>
+                                <h4 class="font-bold text-sm">${item ? item.title : 'Auction Item'}</h4>
+                                <span class="text-xs text-gray-400">Bid Placed: $${b.amount.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${b.status === 'winning' ? 'bg-emerald-100 text-emerald-700' : b.status === 'outbid' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">
+                            ${b.status.toUpperCase()}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* ==========================================================================
+           8. COMMUNITY CHAT ROOM
+           ========================================================================== */
+        function renderChatFeed() {
+            const channels = document.getElementById('chatRoomChannels');
+            channels.innerHTML = state.auctions.map(a => `
+                <button onclick="switchChatChannel(${a.id})" class="w-full text-left p-2.5 rounded-xl text-xs font-bold transition-colors ${state.activeChatChannel === a.id ? 'bg-brand-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}">
+                    # ${a.title}
+                </button>
+            `).join('');
+
+            const channelItem = state.auctions.find(a => a.id === state.activeChatChannel);
+            if (channelItem) {
+                document.getElementById('activeChatChannelTitle').innerText = channelItem.title;
+            }
+
+            const feed = document.getElementById('mainChatFeed');
+            const chats = state.chats.filter(c => c.auctionId === state.activeChatChannel);
+            feed.innerHTML = chats.map(c => `
+                <div class="flex flex-col">
+                    <div class="flex items-baseline space-x-2">
+                        <span class="font-extrabold text-brand-600 dark:text-brand-400">${c.username}</span>
+                        <span class="text-[9px] text-gray-400">${c.time}</span>
+                    </div>
+                    <p class="p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-950 mt-1 max-w-xl text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-800">${c.message}</p>
+                </div>
+            `).join('');
+        }
+
+        function switchChatChannel(id) {
+            state.activeChatChannel = id;
+            renderChatFeed();
+        }
+
+        function handleMainChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('mainChatInput');
+            if (!input.value.trim()) return;
+
+            state.chats.push({
+                id: Date.now(),
+                auctionId: state.activeChatChannel,
+                username: "Alex Johnson (You)",
+                message: input.value.trim(),
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            input.value = '';
+            saveState();
+            renderChatFeed();
+        }
+
+        /* ==========================================================================
+           9. ADMIN CONTROL CENTER
+           ========================================================================== */
+        function renderAdminPanel() {
+            const body = document.getElementById('adminAuctionTable');
+            body.innerHTML = state.auctions.map(a => `
+                <tr>
+                    <td class="py-3 px-3">
+                        <div class="flex items-center space-x-3">
+                            <img src="${a.image}" class="w-8 h-8 rounded-lg object-cover" onerror="this.src='https://placehold.co/100x100/dc2626/ffffff?text=Item'">
+                            <div>
+                                <div class="font-bold text-gray-900 dark:text-white">${a.title}</div>
+                                <div class="text-[10px] text-gray-400">${a.category}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 font-mono font-bold text-brand-600">$${a.currentPrice.toLocaleString()}</td>
+                    <td class="py-3 px-3">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.status === 'active' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}">${a.status}</span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs">${formatTimer(a.endTime)}</td>
+                    <td class="py-3 px-3 text-right space-x-1">
+                        ${a.status === 'active' ? `
+                            <button onclick="extendAuctionTimer(${a.id})" class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold">+5m</button>
+                            <button onclick="declareWinnerAdmin(${a.id})" class="px-2.5 py-1 rounded-lg bg-brand-600 text-white text-[11px] font-bold">Declare Winner</button>
+                        ` : `
+                            <button onclick="startAuctionAdmin(${a.id})" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold">Start Live</button>
+                        `}
+                        <button onclick="deleteAuctionAdmin(${a.id})" class="px-2 py-1 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-600 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCreateAuctionModal() {
+            document.getElementById('createAuctionModal').classList.remove('hidden');
+        }
+        function closeCreateAuctionModal() {
+            document.getElementById('createAuctionModal').classList.add('hidden');
+        }
+
+        function handleCreateAuction(e) {
+            e.preventDefault();
+            const title = document.getElementById('newTitle').value;
+            const category = document.getElementById('newCategory').value;
+            const startPrice = parseInt(document.getElementById('newStartPrice').value);
+            const image = document.getElementById('newImage').value || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800';
+            const duration = parseInt(document.getElementById('newDuration').value) * 60;
+            const desc = document.getElementById('newDesc').value;
+
+            state.auctions.push({
+                id: Date.now(),
+                title, category, description: desc, image,
+                startPrice, currentPrice: startPrice, winningBidder: "No bids yet",
+                endTime: duration, totalTime: duration, status: "active",
+                bidsCount: 0, participants: 1
+            });
+
+            saveState();
+            closeCreateAuctionModal();
+            showToast("New Auction Launched Successfully!", "success");
+            renderAll();
+        }
+
+        function extendAuctionTimer(id) {
+            const a = state.auctions.find(x => x.id === id);
+            if (a) {
+                a.endTime += 300;
+                saveState();
+                showToast(`Timer extended by +5 minutes for ${a.title}`, "info");
+                renderAll();
+            }
+        }
+
+        function declareWinnerAdmin(id) {
+            const a = state.auctions.find(x => x.id === id);
+            if (a) {
+                a.status = 'ended';
+                a.endTime = 0;
+                playBeep("win");
+                showToast(`Winner Declared: ${a.winningBidder} won ${a.title} for $${a.currentPrice.toLocaleString()}!`, "success");
+                saveState();
+                renderAll();
+            }
+        }
+
+        function startAuctionAdmin(id) {
+            const a = state.auctions.find(x => x.id === id);
+            if (a) {
+                a.status = 'active';
+                a.endTime = 600;
+                saveState();
+                showToast(`Auction Started: ${a.title}`, "success");
+                renderAll();
+            }
+        }
+
+        function deleteAuctionAdmin(id) {
+            state.auctions = state.auctions.filter(a => a.id !== id);
+            saveState();
+            renderAll();
+        }
+
+        /* ==========================================================================
+           10. REPORTS & CSV EXPORT
+           ========================================================================== */
+        function renderReports() {
+            // Category Progress Bars
+            const cats = {};
+            state.auctions.forEach(a => {
+                cats[a.category] = (cats[a.category] || 0) + a.currentPrice;
+            });
+            const maxVal = Math.max(...Object.values(cats), 1);
+
+            const container = document.getElementById('categoryReportBars');
+            container.innerHTML = Object.keys(cats).map(c => `
+                <div>
+                    <div class="flex justify-between font-bold mb-1">
+                        <span>${c}</span>
+                        <span class="text-brand-600">$${cats[c].toLocaleString()}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
+                        <div class="bg-brand-600 h-full" style="width: ${(cats[c] / maxVal) * 100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Top Bidders
+            const leaderboard = document.getElementById('topBiddersLeaderboard');
+            leaderboard.innerHTML = state.bidders.map(b => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 dark:bg-gray-950">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-7 h-7 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-xs">
+                            ${b.name.charAt(0)}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-900 dark:text-white">${b.name}</div>
+                            <div class="text-[10px] text-gray-400">${b.category}</div>
+                        </div>
+                    </div>
+                    <span class="font-bold font-mono text-emerald-600">$${b.budget.toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function exportBidsCSV() {
+            let csv = "Bid ID,Auction ID,Bidder Name,Amount,Status,Timestamp\n";
+            state.bids.forEach(b => {
+                csv += `${b.id},${b.auctionId},"${b.bidderName}",${b.amount},${b.status},"${b.timestamp}"\n`;
+            });
+            downloadBlob(csv, "Live_Auction_Bids_Report.csv", "text/csv");
+        }
+
+        function exportAuctionsCSV() {
+            let csv = "Auction ID,Title,Category,Current Price,Winning Bidder,Status,Bids Count\n";
+            state.auctions.forEach(a => {
+                csv += `${a.id},"${a.title}","${a.category}",${a.currentPrice},"${a.winningBidder}",${a.status},${a.bidsCount}\n`;
+            });
+            downloadBlob(csv, "Live_Auctions_Summary_Report.csv", "text/csv");
+        }
+
+        function downloadBlob(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Exported ${filename}`, "success");
+        }
+
+        /* ==========================================================================
+           11. REAL-TIME TICKER & COMPETITOR SIMULATOR
+           ========================================================================== */
+        function formatTimer(sec) {
+            if (sec <= 0) return "00:00:00";
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Ticking loop every 1 second
+        setInterval(() => {
+            let updated = false;
+            state.auctions.forEach(a => {
+                if (a.status === 'active' && a.endTime > 0) {
+                    a.endTime -= 1;
+                    updated = true;
+                    if (a.endTime === 0) {
+                        a.status = 'ended';
+                        playBeep('win');
+                        showToast(`AUCTION ENDED: ${a.title} won by ${a.winningBidder}!`, "info");
+                    }
+                }
+            });
+            if (updated) {
+                renderHeaderAndStats();
+                const roomTimerDisplay = document.getElementById('roomTimerDisplay');
+                const spotlight = state.auctions.find(a => a.id === state.selectedAuctionId);
+                if (spotlight && roomTimerDisplay) {
+                    roomTimerDisplay.innerText = formatTimer(spotlight.endTime);
+                    const pct = Math.max(0, Math.min(100, (spotlight.endTime / (spotlight.totalTime || 600)) * 100));
+                    document.getElementById('roomProgressBar').style.width = `${pct}%`;
+                }
+            }
+        }, 1000);
+
+        // Competitor simulated bidding engine every 5 seconds
+        setInterval(() => {
+            if (!state.simulationActive) return;
+
+            const activeList = state.auctions.filter(a => a.status === 'active');
+            if (activeList.length === 0) return;
+
+            const randomAuction = activeList[Math.floor(Math.random() * activeList.length)];
+            const randomBidder = state.bidders[Math.floor(Math.random() * state.bidders.length)];
+
+            if (randomBidder.name !== "Alex Johnson (You)") {
+                const increment = [100, 250, 500, 1000][Math.floor(Math.random() * 4)];
+                const newPrice = randomAuction.currentPrice + increment;
+                placeBid(randomAuction.id, randomBidder.name, newPrice);
+            }
+        }, 6000);
+
+        /* Initialize on load */
+        window.onload = function() {
+            renderAll();
+        }
+    </script>
+</body>
+</html>
